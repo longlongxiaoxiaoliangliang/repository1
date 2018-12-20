@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.prolog.time.management.mapper.Workinghoursentry">
+    <resultMap type="com.prolog.time.management.model.entity.Workinghours" id="WorkinghoursResultMap">
+        <id column="WORKING_ID" property="workingId" />
+        <result column="all_Project_Id" property="projectId"/>
+        <result column="all_project_name" property="projectName"/>
+        <result column="project_type" property="rojectType"/>
+        <result column="remark1" property="remark1"/>
+        <result column="beg_date" property="begDate"/>
+        <result column="end_date" property="endDate"/>
+        <result column="work_site" property="workSite"/>
+        <result column="audit_status" property="auditStatus"/>
+        <result column="audit_date" property="auditDate"/>
+        <result column="audit_user" property="auditUser"/>
+        <result column="remark2" property="remark2"/>
+        <result column="ins_dt" property="creatDate"/>
+        <result column="lst_upd_dt" property="updateDate"/>
+        <result column="ins_usr_id" property="creatBy"/>
+        <result column="lst_upd_usr_id" property="updateBy"/>
+        <result column="ins_usr_name" property="insusrname"/>
+        <result column="audit_user_name" property="auditusername"/>
+    </resultMap>
+
+
+
+    <insert id="insert" useGeneratedKeys = "true" keyProperty = "workingId">
+        <selectKey keyProperty="workingId" resultType="String" order="BEFORE">
+            select WORK_IDC.nextval FROM dual
+        </selectKey>
+		insert into working_hour_input(working_id,all_project_id,all_project_name,project_type,remark1,beg_date,end_date,work_site,audit_status,audit_date
+,audit_user,remark2,ins_usr_id,ins_dt,lst_upd_usr_id,lst_upd_dt,seq_no,working_context,commit_date,ins_usr_name)
+		 values(#{workingId},#{projectId},#{projectName},#{rojectType},#{remark1},#{begDate},#{endDate},#{workSite},
+		 #{auditStatus},#{auditDate},#{auditUser},#{remark2},#{creatBy},#{creatDate},#{updateBy},#{updateDate},'1',#{workingContext},sysdate,#{insusrname})
+	</insert>
+
+    <insert id="insertByList" useGeneratedKeys = "true" keyProperty = "workingId">
+        <selectKey keyProperty="workingId" resultType="String" order="BEFORE">
+            select WORK_IDC.nextval FROM dual
+        </selectKey>
+        insert into working_hour_input(working_id,all_project_id,all_project_name,project_type,remark1,beg_date,end_date,work_site,audit_status,audit_date
+        ,audit_user,remark2,ins_usr_id,ins_dt,lst_upd_usr_id,lst_upd_dt,seq_no,working_context,commit_date,ins_usr_name)
+        SELECT WORK_IDC.nextval,m.* FROM(
+        <foreach collection="list" item="item" index="index" separator="union all">
+            select
+            #{item.projectId},#{item.projectName},#{item.rojectType},#{item.remark1},#{item.begDate},#{item.endDate},#{item.workSite},
+            #{item.auditStatus},#{item.auditDate},#{item.auditUser},#{item.remark2},#{item.creatBy},#{item.creatDate},#{item.updateBy},#{item.updateDate},'1',#{item.workingContext},sysdate,#{item.insusrname}
+            from dual
+        </foreach>
+        ) m
+    </insert>
+
+    <select id="countRecord" resultType="int">
+		select
+		count(working_id)
+		from working_hour_input where beg_date <![CDATA[ < ]]> (to_date(#{param1},'yyyy/mm/dd hh24:mi:ss')+1)
+		and beg_date <![CDATA[ > ]]> to_date(#{param1},'yyyy/mm/dd hh24:mi:ss')
+        and ins_usr_id = #{param2}
+        and all_project_id = #{param3}
+	</select>
+
+    <delete id="deleteByIds" parameterType = "java.util.List">
+		delete from working_hour_input where working_id in
+        <foreach item="item" collection="list" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and  audit_status <![CDATA[ <> ]]> '1'
+	</delete>
+
+    <select id="queryWorkinghoursData" resultType="Map" parameterType="Map">
+        select WORKING_ID,all_Project_Id,all_project_name,project_type,decode(remark1,'0','否','1','是','') remark1,beg_date,end_date,work_site,decode(audit_status,'0','已提交','1','审核通过','2','审核不通过','') audit_status,audit_date,audit_user_name audit_user,remark2
+        from working_hour_input
+        where ins_usr_id = #{usrid}
+            <if test="bgtime != null">
+                and beg_date <![CDATA[ > ]]> (to_date(#{bgtime},'yyyy/mm/dd hh24:mi:ss')-1)
+            </if>
+            <if test="edtime != null">
+                and beg_date <![CDATA[ < ]]> (to_date(#{edtime},'yyyy/mm/dd hh24:mi:ss')+1)
+            </if>
+            <if test="strparam != null">
+                and (all_Project_Id like concat(concat('%',#{strparam}),'%') or all_project_name like concat(concat('%',#{strparam}),'%'))
+            </if>
+        order by beg_date DESC
+	</select>
+
+    <select id="queryProjectData" resultType="Map">
+        select m.project_no,
+        project_name,
+        project_manager_name,
+        projecttype,
+        region_manager,
+        sale_manager
+        from (select distinct project_no, project_name, project_manager_name
+        from project_tema_define
+        where (project_manager = #{param1})
+        or (project_user = #{param1})) m
+        left join (select project_no,
+        '售前项目' projecttype,
+        REGION_MANAGER,
+        SALE_MANAGER
+        from presale_project_info
+        union all
+        select CONTRACT_NO project_no,
+        '实施项目' projecttype,
+        REGION_MANAGER,
+        SALE_MANAGER
+        from imp_project_info
+        union all
+        select CONTRACT_NO    project_no,
+        project_types  projecttype,
+        REGION_MANAGER,
+        SALE_MANAGER
+        from in_project_info) n
+        on m.project_no = n.project_no
+        <where>
+            <if test="param2 != null">
+                and (m.project_no like concat(concat('%',#{param2}),'%') or m.project_name like concat(concat('%',#{param2}),'%'))
+            </if>
+        </where>
+    </select>
+
+    <update id="updateEntryData">
+            update working_hour_input
+            set   ALL_PROJECT_ID = #{all_project_id},
+            ALL_PROJECT_NAME = #{all_project_name},
+            PROJECT_TYPE = #{project_type},
+            REMARK1 = #{remark1},
+            WORK_SITE = #{work_site},
+            BEG_DATE = #{beg_date},
+            END_DATE = #{end_date},
+            LST_UPD_USR_ID = #{userid},
+            LST_UPD_DT = sysdate
+            where WORKING_ID = #{working_id}
+            and AUDIT_STATUS = '0'
+    </update>
+
+</mapper>

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.prolog.time.management.mapper.Workinghoursaudit">
+    <resultMap type="com.prolog.time.management.model.entity.Workinghours" id="WorkinghoursResultMap">
+        <id column="WORKING_ID" property="workingId"/>
+        <result column="all_Project_Id" property="projectId"/>
+        <result column="all_project_name" property="projectName"/>
+        <result column="project_type" property="rojectType"/>
+        <result column="remark1" property="remark1"/>
+        <result column="beg_date" property="begDate"/>
+        <result column="end_date" property="endDate"/>
+        <result column="work_site" property="workSite"/>
+        <result column="audit_status" property="auditStatus"/>
+        <result column="audit_date" property="auditDate"/>
+        <result column="audit_user" property="auditUser"/>
+        <result column="remark2" property="remark2"/>
+        <result column="ins_dt" property="creatDate"/>
+        <result column="lst_upd_dt" property="updateDate"/>
+        <result column="ins_usr_id" property="creatBy"/>
+        <result column="lst_upd_usr_id" property="updateBy"/>
+        <result column="ins_usr_name" property="insusrname"/>
+        <result column="audit_user_name" property="auditusername"/>
+    </resultMap>
+
+
+    <select id="queryWorkinghoursData" resultType="Map" parameterType="Map">
+        select  inpt.WORKING_ID,inpt.all_Project_Id,inpt.all_project_name,
+        inpt.ins_usr_name submitter,inpt.project_type,decode(inpt.remark1,'0','否','1','是','') remark1,
+        to_char(inpt.beg_date,'yyyy-mm-dd hh24:mi:ss') beg_date,to_char(inpt.end_date,'yyyy-mm-dd hh24:mi:ss')
+        end_date,to_char(inpt.commit_date,'yyyy-mm-dd hh24:mi:ss') commit_date,(inpt.end_date-inpt.beg_date)*24
+        intervalstr,decode(to_char(inpt.beg_date,'yyyy/mm/dd'),to_char(inpt.commit_date,'yyyy/mm/dd'),'正常提交','补交')
+        isdelay,inpt.work_site,decode(inpt.audit_status,'0','已提交','1','审核通过','2','审核不通过','')
+        audit_status,to_char(inpt.audit_date,'yyyy-mm-dd hh24:mi:ss') audit_date,
+        inpt.audit_user_name audit_user, inpt.remark2
+        from working_hour_input inpt left join project_tema_define tema on tema.project_user = inpt.ins_usr_id and
+        tema.project_no = inpt.all_project_id
+        where inpt.audit_status = '0'
+        and tema.project_manager = #{usrid}
+        or (tema.project_user = #{usrid} and tema.team_role in ('ROLE0000000289', 'ROLE0000000303'))
+        <if test="bgtime != null">
+            and inpt.beg_date <![CDATA[ > ]]> (to_date(#{bgtime},'yyyy/mm/dd hh24:mi:ss')-1)
+        </if>
+        <if test="edtime != null">
+            and inpt.beg_date <![CDATA[ < ]]> (to_date(#{edtime},'yyyy/mm/dd hh24:mi:ss')+1)
+        </if>
+        <if test="strparam != null">
+            and (inpt.all_Project_Id like concat(concat('%',#{strparam}),'%') or (inpt.all_project_name like
+            concat(concat('%',#{strparam}),'%')) or (inpt.audit_user_name like concat(concat('%',#{strparam}),'%')))
+        </if>
+        order by inpt.beg_date DESC
+    </select>
+
+    <update id="updateByIdsPass">
+        <foreach collection="param1" item="item" index="index" open="begin" close=";end;" separator=";">
+            update working_hour_input
+            set AUDIT_STATUS = '1',
+            AUDIT_DATE = sysdate,
+            audit_user = #{param2},
+            audit_user_name = #{param3}
+            where WORKING_ID = #{item}
+        </foreach>
+    </update>
+
+    <update id="updateByIdsUnPass">
+        <foreach collection="param1" item="item" index="index" open="begin" close=";end;" separator=";">
+            update working_hour_input
+            set AUDIT_STATUS = '2',
+            AUDIT_DATE = sysdate,
+            audit_user = #{param2},
+            audit_user_name = #{param3}
+            where WORKING_ID = #{item}
+        </foreach>
+    </update>
+
+</mapper>

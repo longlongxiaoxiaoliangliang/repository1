@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.prolog.time.management.mapper.PublicQueryMapper">
+
+    <select id="queryPresaleProjectNoData" resultType="Map" >
+select arc_no,
+       project_no,
+       region_manager,
+       sale_manager,
+       region_name,
+       project_status
+  from presale_project_info
+        <where>
+        <if test="_parameter != null">
+            and (arc_no like concat(concat('%',#{param1}),'%') or project_name like concat(concat('%',#{param1}),'%'))
+        </if>
+        </where>
+    </select>
+
+<select id="queryContractCoding" resultType="Map" >
+select *
+  from (select contract_no,
+               chinese_project as contract_name,
+               region_manager,
+               sale_manager
+          from imp_project_info
+        union
+        select contract_no, CONTRACT_NAME, region_manager, sale_manager
+          from in_project_info
+        union
+        select PROJECT_NO     as contract_no,
+               PROJECT_NAME   as contract_name,
+               region_manager,
+               sale_manager
+          from presale_project_info)
+    <where>
+        <if test="_parameter != null">
+            and (contract_no like concat(concat('%',#{param1}),'%') or region_manager like concat(concat('%',#{param1}),'%'))
+        </if>
+    </where>
+</select>
+
+    <select id="querySaleContractCoding" resultType="Map">
+select contract_no     as pur_sale_contract_no,
+       chinese_project,
+       region_manager,
+       sale_manager,
+       contract_name   as sale_contract_name,
+       company_code
+  from imp_project_info
+        <where>
+            <if test="_parameter != null">
+                and (contract_no like concat(concat('%',#{param1}),'%') or region_manager like concat(concat('%',#{param1}),'%'))
+            </if>
+        </where>
+union
+select contract_no    as pur_sale_contract_no,
+       CONTRACT_NAME  as chinese_project,
+       region_manager,
+       sale_manager,
+       contract_name  as sale_contract_name,
+       company_code
+  from in_project_info
+        <where>
+            <if test="_parameter != null">
+                and (contract_no like concat(concat('%',#{param1}),'%') or region_manager like concat(concat('%',#{param1}),'%'))
+            </if>
+        </where>
+    </select>
+
+</mapper>
+

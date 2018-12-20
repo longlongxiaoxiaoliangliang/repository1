@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.prolog.time.management.mapper.PurProjectInfoMapper">
+
+    <insert id="insert" useGeneratedKeys = "true" keyProperty = "project_id">
+        <selectKey keyProperty="project_id" resultType="String" order="BEFORE">
+            select WORK_IDC.nextval FROM dual
+        </selectKey>
+		insert into pur_project_info(
+        project_id,
+        pur_contract_no,
+        contract_name,
+        sign_date,
+        sale_contract_no,
+        sale_contract_name,
+        first_party,
+        second_party,
+        contract_money,
+        pay_condition,
+        ins_dt,
+        ins_usr_id,
+        ins_usr_name)
+		 values(concat('pur',#{project_id}),
+        #{pur_contract_no},
+        #{contract_name},
+        #{sign_date},
+        #{sale_contract_no},
+        #{sale_contract_name},
+        #{first_party},
+        #{second_party},
+        #{contract_money},
+        #{pay_condition},
+        #{ins_dt},
+        #{ins_usr_id},
+        #{ins_usr_name})
+	</insert>
+
+    <insert id="insertByList" useGeneratedKeys = "true" keyProperty = "project_id">
+        <selectKey keyProperty="project_id" resultType="String" order="BEFORE">
+            select WORK_IDC.nextval FROM dual
+        </selectKey>
+        insert into pur_project_info(project_id,
+        pur_contract_no,
+        contract_name,
+        sign_date,
+        sale_contract_no,
+        sale_contract_name,
+        first_party,
+        second_party,
+        contract_money,
+        pay_condition,
+        ins_dt,
+        ins_usr_id,
+        ins_usr_name)
+        SELECT concat('pur',WORK_IDC.nextval),m.* FROM(
+        <foreach collection="list" item="item" index="index" separator="union all">
+            select
+            #{item.pur_contract_no},#{item.contract_name},#{item.sign_date},#{item.sale_contract_no},#{item.sale_contract_name},#{item.first_party},#{item.second_party},
+            #{item.contract_money},#{item.pay_condition},#{item.ins_dt},#{item.ins_usr_id},#{item.ins_usr_name}
+            from dual
+        </foreach>
+        ) m
+    </insert>
+
+
+    <delete id="deleteByIds" parameterType = "java.util.List">
+		delete from pur_project_info where project_id in
+        <foreach item="item" collection="list" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+	</delete>
+
+    <select id="queryPurProjectInfoData" resultType="Map" parameterType="Map">
+        select
+        project_id,
+        pur_contract_no,
+        contract_name,
+        sign_date,
+        sale_contract_no,
+        sale_contract_name,
+        first_party,
+        second_party,
+        contract_money,
+        pay_condition,
+        ins_dt,
+        ins_usr_id,
+        ins_usr_name
+        from pur_project_info
+        <where>
+            <if test="strparam != null">
+                and ((PUR_CONTRACT_NO like concat(concat('%',#{strparam}),'%')) or (CONTRACT_NAME like concat(concat('%',#{strparam}),'%'))
+                or (SALE_CONTRACT_NO like concat(concat('%',#{strparam}),'%')) or (SALE_CONTRACT_NAME like concat(concat('%',#{strparam}),'%')))
+            </if>
+        </where>
+        order by ins_dt DESC
+	</select>
+
+</mapper>

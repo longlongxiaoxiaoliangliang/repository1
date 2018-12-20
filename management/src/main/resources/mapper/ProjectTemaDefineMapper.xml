@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.prolog.time.management.mapper.ProjectTemaDefineMapper">
+
+
+
+    <select id="queryLoginUserProjectDefineData" resultType="Map">
+        select project_no,project_name
+        from ath_project_manager
+        where project_manager = #{param1}
+        <if test="param2 != null">
+            and (m.options like concat(concat('%',#{param2}),'%'))
+        </if>
+    </select>
+
+    <select id="queryUsersOfProjectData" resultType="Map">
+        select distinct project_user,project_user_name,project_user_dept
+        from project_tema_define
+        where project_no = #{param1}
+          and project_manager = #{param2}
+    </select>
+
+
+    <insert id="insert">
+MERGE INTO project_tema_define T
+USING (
+        <foreach collection="list" item="item" index="index" separator="union">
+        select
+        #{item.project_no} project_no,#{item.project_name} project_name,#{item.project_manager} project_manager,#{item.project_user} project_user,#{item.id} id,#{item.ins_dt} ins_dt,
+        #{item.ins_usr_id} ins_usr_id,#{item.lst_upd_dt} lst_upd_dt,#{item.lst_upd_usr_id} lst_upd_usr_id,#{item.project_manager_name} project_manager_name,#{item.project_user_name} project_user_name,#{item.project_user_dept} project_user_dept
+        from dual
+    </foreach>) T1
+ON (T.project_no = T1.project_no AND T.project_user = T1.project_user AND T.PROJECT_MANAGER = T1.project_manager)
+WHEN NOT MATCHED THEN
+  INSERT
+       (team_id,
+        project_no,
+        project_name,
+        project_manager,
+        project_user,
+        id,
+        ins_dt,
+        ins_usr_id,
+        lst_upd_dt,
+        lst_upd_usr_id,
+        project_manager_name,
+        project_user_name,
+        project_user_dept)
+  VALUES
+    (WORK_IDC.nextval,
+     T1.project_no,
+     T1.project_name,
+     T1.project_manager,
+     T1.project_user,
+     T1.id,
+     T1.ins_dt,
+     T1.ins_usr_id,
+     T1.lst_upd_dt,
+     T1.lst_upd_usr_id,
+     T1.project_manager_name,
+     T1.project_user_name,
+     T1.project_user_dept)
+    </insert>
+
+
+
+    <delete id="deleteByIds">
+        delete from project_tema_define where PROJECT_USER in
+        <foreach item="item" collection="param1" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and PROJECT_NO = #{param2}
+        and PROJECT_MANAGER = #{param3}
+    </delete>
+
+    <delete id="deleteAllOfThis">
+        delete from project_tema_define where PROJECT_NO = #{param1} and PROJECT_MANAGER = #{param2}
+    </delete>
+
+</mapper>
+

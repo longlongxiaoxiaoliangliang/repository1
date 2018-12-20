@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.prolog.time.management.mapper.NotauditeMapper">
+
+    <select id="queryNotauditedData" resultType="Map" parameterType="Map">
+        select tb.all_project_id,
+        tb.all_project_name,
+        (select distinct project_manager_name
+        from project_tema_define
+        where project_manager = #{usrid}) project_manager_name,
+        tb.ins_usr_name project_user_name,
+        tb.commit_date noaudit_date
+        from working_hour_input tb
+        where tb.all_project_id in
+        (select ta.project_no
+        from presale_project_info ta
+        where ta.project_no in
+        (select distinct project_no
+        from project_tema_define ta
+        where ta.project_manager = #{usrid})
+        union
+        select ta.contract_no
+        from imp_project_info ta
+        where ta.contract_no in
+        (select distinct project_no
+        from project_tema_define ta
+        where ta.project_manager = #{usrid})
+        union
+        select ta.contract_no
+        from in_project_info ta
+        where ta.contract_no in
+        (select distinct project_no
+        from project_tema_define ta
+        where ta.project_manager = #{usrid})
+        union
+        select ta.contract_no
+        from imp_project_info ta, presale_project_info tb
+        where ta.arc_no = tb.arc_no
+        and (tb.project_no in
+        (select distinct project_no
+        from project_tema_define ta
+        where ta.project_manager = #{usrid}) or
+        ta.contract_no in
+        (select distinct project_no
+        from project_tema_define ta
+        where ta.project_manager = #{usrid}))
+        union
+        select tb.project_no
+        from imp_project_info ta, presale_project_info tb
+        where ta.arc_no = tb.arc_no
+        and (tb.project_no in
+        (select distinct project_no
+        from project_tema_define ta
+        where ta.project_manager = #{usrid}) or
+        ta.contract_no in
+        (select distinct project_no
+        from project_tema_define ta
+        where ta.project_manager = #{usrid})))
+        and tb.audit_status = '0'
+        <if test="bgtime != null">
+            and tb.commit_date <![CDATA[ > ]]> (to_date(#{bgtime},'yyyy/mm/dd hh24:mi:ss')-1)
+        </if>
+        <if test="edtime != null">
+            and tb.commit_date <![CDATA[ < ]]> (to_date(#{edtime},'yyyy/mm/dd hh24:mi:ss')+1)
+        </if>
+        <if test="strparam != null">
+            and ((tb.all_project_id like concat(concat('%',#{strparam}),'%')) or (tb.all_project_name like
+            concat(concat('%',#{strparam}),'%')))
+        </if>
+    </select>
+
+</mapper>

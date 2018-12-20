@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.prolog.time.management.mapper.HomePageMapper">
+
+    <select id="querySelfNotfilledData" resultType="Map">
+select DISTINCT project_user_name,
+                  nocommit_date
+  from Project_Daily_Record
+ where view_Type = '2'
+   and project_User = #{param1}
+    </select>
+
+    <select id="querySelfNotauditedData" resultType="Map">
+        select tb.all_project_id,
+        tb.all_project_name,
+        (select distinct project_manager_name
+        from project_tema_define
+        where project_manager = #{param1}) project_manager_name,
+        tb.ins_usr_name project_user_name,
+        tb.commit_date noaudit_date
+        from working_hour_input tb
+        where tb.all_project_id in
+        (select ta.project_no
+        from presale_project_info ta
+        where ta.project_no in
+        (select distinct project_no
+        from project_tema_define ta
+        where ta.project_manager = #{param1})
+        union
+        select ta.contract_no
+        from imp_project_info ta
+        where ta.contract_no in
+        (select distinct project_no
+        from project_tema_define ta
+        where ta.project_manager = #{param1})
+        union
+        select ta.contract_no
+        from in_project_info ta
+        where ta.contract_no in
+        (select distinct project_no
+        from project_tema_define ta
+        where ta.project_manager = #{param1})
+        union
+        select ta.contract_no
+        from imp_project_info ta, presale_project_info tb
+        where ta.arc_no = tb.arc_no
+        and (tb.project_no in
+        (select distinct project_no
+        from project_tema_define ta
+        where ta.project_manager = #{param1}) or
+        ta.contract_no in
+        (select distinct project_no
+        from project_tema_define ta
+        where ta.project_manager = #{param1}))
+        union
+        select tb.project_no
+        from imp_project_info ta, presale_project_info tb
+        where ta.arc_no = tb.arc_no
+        and (tb.project_no in
+        (select distinct project_no
+        from project_tema_define ta
+        where ta.project_manager = #{param1}) or
+        ta.contract_no in
+        (select distinct project_no
+        from project_tema_define ta
+        where ta.project_manager = #{param1})))
+        and tb.audit_status = '0'
+    </select>
+
+</mapper>

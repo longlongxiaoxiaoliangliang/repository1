@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.prolog.time</groupId>
+    <artifactId>management</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+
+    <name>management</name>
+    <description>Demo project for Spring Boot</description>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <prolog.framework.version>1.0.0</prolog.framework.version>
+    </properties>
+
+    <parent>
+        <groupId>com.prolog.framework</groupId>
+        <artifactId>plg-fx-springcloud-parent</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>3.8.1</version><!--$NO-MVN-MAN-VER$ -->
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.prolog.framework</groupId>
+            <artifactId>plg-fx-core</artifactId>
+            <version>${prolog.framework.version}</version>
+        </dependency>
+
+        <!--引入通用功能模块 -->
+        <dependency>
+            <groupId>com.prolog.framework</groupId>
+            <artifactId>plg-fx-common</artifactId>
+            <version>${prolog.framework.version}</version>
+        </dependency>
+
+        <!-- 权限 -->
+        <dependency>
+            <groupId>com.prolog.framework</groupId>
+            <artifactId>plg-fx-authorization-core</artifactId>
+            <version>${prolog.framework.version}</version>
+        </dependency>
+
+        <!--引入数据持久层框架 -->
+        <dependency>
+            <groupId>com.prolog.framework</groupId>
+            <artifactId>plg-fx-starter-dao</artifactId>
+            <version>${prolog.framework.version}</version>
+        </dependency>
+
+        <!--引入web层框架 -->
+        <dependency>
+            <groupId>com.prolog.framework</groupId>
+            <artifactId>plg-fx-starter-web</artifactId>
+            <version>${prolog.framework.version}</version>
+        </dependency>
+
+        <!--引入api自动生成框架 -->
+        <dependency>
+            <groupId>com.prolog.framework</groupId>
+            <artifactId>plg-fx-starter-apidoc</artifactId>
+            <version>${prolog.framework.version}</version>
+        </dependency>
+
+        <!--微服务框架 -->
+        <dependency>
+            <groupId>com.prolog.framework</groupId>
+            <artifactId>plg-fx-microservice</artifactId>
+            <version>${prolog.framework.version}</version>
+        </dependency>
+
+        <!--springboot测试依赖 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-logging</artifactId>
+                </exclusion>
+            </exclusions>
+            <scope>test</scope>
+        </dependency>
+
+        <!--springboot开发工具，实现热部署 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <!--用于编译jsp-->
+        <dependency>
+            <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-jasper</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <!--引入poi-->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi</artifactId>
+            <version>3.8</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>3.8</version>
+        </dependency>
+
+        <!-- 权限 -->
+        <dependency>
+            <groupId>com.prolog.framework</groupId>
+            <artifactId>plg-fx-authorization-core</artifactId>
+            <version>${prolog.framework.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.prolog.framework</groupId>
+            <artifactId>plg-cs-resource-facade</artifactId>
+            <version>${prolog.framework.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.prolog</groupId>
+            <artifactId>prolog-user-facade</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.prolog</groupId>
+            <artifactId>prolog-pub-common</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>dom4j</groupId>
+            <artifactId>dom4j</artifactId>
+            <version>1.6.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20160810</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>{artifactId}-${version}</finalName>
+        <resources>
+            <resource>
+                <directory>src/main/java</directory>
+                <includes>
+                    <include>**/*.properties</include>
+                    <include>**/*.yml</include>
+                    <include>**/*.xml</include>
+                </includes>
+                <filtering>false</filtering>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <executable>true</executable>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

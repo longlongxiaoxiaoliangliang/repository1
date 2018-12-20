@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.prolog.time.management.mapper.PresaleProjectInfoMapper">
+
+    <insert id="insert" useGeneratedKeys = "true" keyProperty = "project_id">
+        <selectKey keyProperty="project_id" resultType="String" order="BEFORE">
+            select WORK_IDC.nextval FROM dual
+        </selectKey>
+		insert into presale_project_info(project_id,arc_no,project_no,region_manager,sale_manager,region_name,province_name,
+        province_no,customer_name,customer_no,project_name,consult_user,consultation_dep,project_status,project_cnt,cooperation_object,
+        info_source,pre_contract_type,pre_contract_money,ins_dt,
+        ins_usr_id,ins_usr_name)
+		 values(concat('pre',#{project_id}),#{arc_no},#{project_no},#{region_manager},#{sale_manager},#{region_name},#{province_name},
+        #{province_no},#{customer_name},#{customer_no},#{project_name},#{consult_user},#{consultation_dep},#{project_status},#{project_cnt},#{cooperation_object},
+        #{info_source},#{pre_contract_type},#{pre_contract_money},#{ins_dt},
+        #{ins_usr_id},#{ins_usr_name})
+	</insert>
+
+    <insert id="insertByList" useGeneratedKeys = "true" keyProperty = "project_id">
+        <selectKey keyProperty="project_id" resultType="String" order="BEFORE">
+            select WORK_IDC.nextval FROM dual
+        </selectKey>
+        insert into presale_project_info(project_id,arc_no,project_no,region_manager,sale_manager,region_name,province_name,
+        province_no,customer_name,customer_no,project_name,consult_user,consultation_dep,project_status,project_cnt,cooperation_object,
+        info_source,pre_contract_type,pre_contract_money,ins_dt,
+        ins_usr_id,ins_usr_name)
+        SELECT concat('pre',WORK_IDC.nextval),m.* FROM(
+        <foreach collection="list" item="item" index="index" separator="union all">
+            select
+            #{item.arc_no},#{item.project_no},#{item.region_manager},#{item.sale_manager},#{item.region_name},#{item.province_name},#{item.province_no},
+            #{item.customer_name},#{item.customer_no},#{item.project_name},#{item.consult_user},#{item.consultation_dep},#{item.project_status},#{item.project_cnt},#{item.cooperation_object},#{item.info_source},
+            '','' a,#{item.ins_dt},#{item.ins_usr_id},#{item.ins_usr_name}
+            from dual
+        </foreach>
+        ) m
+    </insert>
+
+
+    <delete id="deleteByIds" parameterType = "java.util.List">
+		delete from presale_project_info where project_id in
+        <foreach item="item" collection="list" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+	</delete>
+
+    <select id="queryPresaleProjectInfoData" resultType="Map" parameterType="Map">
+        select project_id,arc_no,project_no,region_manager,sale_manager,region_name,province_name,
+        customer_name,customer_no,project_name,consult_user,consultation_dep,project_status,project_cnt,cooperation_object,
+        info_source,pre_contract_type,pre_contract_money,ins_dt,
+        ins_usr_id,ins_usr_name
+        from presale_project_info
+        <where>
+            <if test="bgtime != null">
+                and ins_dt <![CDATA[ > ]]> (to_date(#{bgtime},'yyyy/mm/dd hh24:mi:ss')-1)
+            </if>
+            <if test="edtime != null">
+                and ins_dt <![CDATA[ < ]]> (to_date(#{edtime},'yyyy/mm/dd hh24:mi:ss')+1)
+            </if>
+            <if test="strparam != null">
+                and ((ARC_NO like concat(concat('%',#{strparam}),'%')) or (REGION_NAME like concat(concat('%',#{strparam}),'%'))
+                or (PROVINCE_NAME like concat(concat('%',#{strparam}),'%')) or (REGION_MANAGER like concat(concat('%',#{strparam}),'%'))
+                or (CUSTOMER_NAME like concat(concat('%',#{strparam}),'%')))
+            </if>
+        </where>
+        order by ins_dt DESC
+	</select>
+
+</mapper>

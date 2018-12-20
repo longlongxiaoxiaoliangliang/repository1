@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.prolog.time.management.mapper.ProjectDailyRecordMapper">
+    <insert id="insert">
+MERGE INTO project_daily_record T
+USING (select tb.project_no,
+              tb.project_name,
+              tb.project_manager,
+              tb.project_user,
+              tb.project_manager_name,
+              tb.project_user_name,
+              tb.project_user_dept,
+              round(to_number(tw.end_date - tw.beg_date) * 24) as hour1,
+              trunc(sysdate) nocommit_date
+         from project_tema_define tb left join working_hour_input tw
+         on tw.all_project_id = tb.project_no and tw.ins_usr_id = tb.project_user
+         and tw.commit_date = trunc(sysdate)
+        where exists (select 'X'
+                 from (select project_no, project_user
+                         from project_tema_define
+                        where project_no in
+                              (select ta.project_no
+                                 from presale_project_info ta
+                                where ta.project_no in
+                                      (select distinct project_no
+                                         from project_tema_define ta)
+                               union
+                               select ta.contract_no
+                                 from imp_project_info ta
+                                where ta.contract_no in
+                                      (select distinct project_no
+                                         from project_tema_define ta)
+                               union
+                               select ta.contract_no
+                                 from in_project_info ta
+                                where ta.project_states = '10'
+                                  and ta.contract_no in
+                                      (select distinct project_no
+                                         from project_tema_define ta)
+                               union
+                               select ta.contract_no
+                                 from imp_project_info     ta,
+                                      presale_project_info tb
+                                where ta.arc_no = tb.arc_no
+                                  and (tb.project_no in
+                                      (select distinct project_no
+                                          from project_tema_define ta) or
+                                      ta.contract_no in
+                                      (select distinct project_no
+                                          from project_tema_define ta))
+                               union
+                               select tb.project_no
+                                 from imp_project_info     ta,
+                                      presale_project_info tb
+                                where ta.arc_no = tb.arc_no
+                                  and (tb.project_no in
+                                      (select distinct project_no
+                                          from project_tema_define ta) or
+                                      ta.contract_no in
+                                      (select distinct project_no
+                                          from project_tema_define ta)))
+                       MINUS
+                       select ta.all_project_id, ta.ins_usr_id
+                         from working_hour_input ta
+                        where round(to_number(end_date - beg_date) * 24) <![CDATA[ >= ]]> 8
+                          and commit_date = trunc(sysdate)) m
+                where tb.project_no = m.project_no
+                  and tb.project_user = m.project_user)) T1
+ON (T.project_no = T1.project_no AND T.project_name = T1.project_name AND T.project_manager = T1.project_manager AND T.project_user = T1.project_user AND T.nocommit_date = trunc(sysdate))
+WHEN NOT MATCHED THEN
+  INSERT
+    (id,
+     project_no,
+     project_name,
+     project_manager,
+     project_user,
+     project_manager_name,
+     project_user_name,
+     nocommit_date,
+     view_type,
+     ins_dt,
+     ins_usr_id,
+     project_user_dept,
+     user_hour)
+  VALUES
+    (WORK_IDC.nextval,
+     T1.project_no,
+     T1.project_name,
+     T1.project_manager,
+     T1.project_user,
+     T1.project_manager_name,
+     T1.project_user_name,
+     T1.nocommit_date,
+     '1',
+     sysdate,
+     'admin',
+     T1.project_user_dept,
+     T1.hour1)
+    </insert>
+
+
+    <delete id="delete" parameterType="java.util.List">
+    delete from project_daily_record ta
+            where exists (select '1'
+            from working_hour_input
+            where all_project_id = ta.project_no
+            and ins_usr_id = ta.project_user
+            and commit_date = trunc(sysdate) and round(to_number(end_date - beg_date) * 24) <![CDATA[ >= ]]> 8)
+            and ta.nocommit_date = trunc(sysdate)
+	</delete>
+
+    <select id="queryProjectDailyRecordData" resultType="Map" parameterType="Map">
+        select
+        t1.project_no,
+        t1.project_name,
+        t1.project_manager_name,
+        t1.project_user_name,
+        t1.user_hour,
+        t1.project_user_dept,
+        t1.nocommit_date
+        from
+        (select
+        project_no,
+        project_name,
+        project_manager_name,
+        project_user_name,
+        sum(user_hour) user_hour,
+        project_user_dept,
+        nocommit_date
+        from project_daily_record
+        where project_manager = #{userid}
+        <if test="bgtime != null">
+            and nocommit_date <![CDATA[ > ]]> (to_date(#{bgtime},'yyyy/mm/dd hh24:mi:ss')-1)
+        </if>
+        <if test="edtime != null">
+            and nocommit_date <![CDATA[ < ]]> (to_date(#{edtime},'yyyy/mm/dd hh24:mi:ss')+1)
+        </if>
+        <if test="strparam != null">
+            and ((project_no like concat(concat('%',#{strparam}),'%')) or (project_name like
+            concat(concat('%',#{strparam}),'%'))
+            or (project_user_name like concat(concat('%',#{strparam}),'%')) or (project_manager_name like
+            concat(concat('%',#{strparam}),'%')))
+        </if>
+        group by project_no,project_name,project_manager_name,project_user_name,project_user_dept,nocommit_date) t1
+        order by nocommit_date DESC
+    </select>
+
+</mapper>

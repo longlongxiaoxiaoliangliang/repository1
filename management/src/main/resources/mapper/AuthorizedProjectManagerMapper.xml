@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.prolog.time.management.mapper.AuthorizedProjectManagerMapper">
+
+    <select id="queryPresaleProjectData" resultType="Map" parameterType="String">
+        select id, options,region_manager,sale_manager,region_name,province_name
+        from (select ta.project_no id, ta.project_name || ' (售前项目)'
+        options,REGION_MANAGER,SALE_MANAGER,REGION_NAME,PROVINCE_NAME
+        from presale_project_info ta) m
+        <where>
+            <if test="_parameter != null">
+                and (m.options like concat(concat('%',#{param1}),'%'))
+            </if>
+        </where>
+        order by id
+    </select>
+    <select id="queryImpProjectData" resultType="Map" parameterType="String">
+        select id, options,region_manager,sale_manager,region_name,province_name
+        from (
+        select tb.contract_no id, tb.contract_name || ' (实施项目)'
+        options,region_manager,sale_manager,region_name,province_name
+        from imp_project_info tb) m
+        <where>
+            <if test="_parameter != null">
+                and (m.options like concat(concat('%',#{param1}),'%'))
+            </if>
+        </where>
+        order by id
+    </select>
+    <select id="queryInProjectData" resultType="Map" parameterType="String">
+        select id, options,region_manager,sale_manager,region_name,province_name
+        from (
+        select tc.contract_no id,
+        tc.contract_name || '(' || tc.project_types || ')'
+        options,region_manager,sale_manager,region_name,province_name
+        from in_project_info tc
+        where tc.project_states <![CDATA[ <> ]]> '0'
+        and tc.project_states <![CDATA[ <> ]]> '100') m
+        <where>
+            <if test="_parameter != null">
+                and (m.options like concat(concat('%',#{param1}),'%'))
+            </if>
+        </where>
+        order by id
+    </select>
+
+
+    <insert id="insert">
+        MERGE INTO ath_project_manager T
+        USING (
+        <foreach collection="list" item="item" index="index" separator="union">
+            select
+            #{item.project_no} project_no,#{item.project_manager} project_manager,#{item.ins_dt}
+            ins_dt,#{item.project_name} project_name,
+            #{item.ins_usr_id} ins_usr_id,#{item.lst_upd_dt} lst_upd_dt,#{item.lst_upd_usr_id}
+            lst_upd_usr_id,#{item.project_manager_name} project_manager_name,#{item.project_manager_dept}
+            project_manager_dept
+            from dual
+        </foreach>) T1
+        ON (T.project_no = T1.project_no AND T.PROJECT_MANAGER = T1.project_manager)
+        WHEN NOT MATCHED THEN
+        INSERT
+        (project_no,
+        project_name,
+        project_manager,
+        ins_dt,
+        ins_usr_id,
+        lst_upd_dt,
+        lst_upd_usr_id,
+        project_manager_dept,
+        project_manager_name)
+        VALUES
+        (T1.project_no,
+        T1.project_name,
+        T1.project_manager,
+        T1.ins_dt,
+        T1.ins_usr_id,
+        T1.lst_upd_dt,
+        T1.lst_upd_usr_id,
+        T1.project_manager_dept,
+        T1.project_manager_name)
+    </insert>
+
+    <select id="queryAllProjectManagerData" resultType="Map">
+           select usr_id as id, usr_name as options
+             from ath_usr_to_role
+            where role_id in ('ROLE0000000289')
+              and usr_name is not null
+            <if test="_parameter != null">
+                and (usr_name like concat(concat('%',#{param1}),'%'))
+            </if>
+    </select>
+
+    <select id="queryManagersOfProject" resultType="Map">
+select project_manager, project_manager_name ,PROJECT_MANAGER_DEPT
+  from ath_project_manager
+ where project_no = #{param1}
+    </select>
+
+    <delete id="deleteById">
+        delete from ath_project_manager where PROJECT_NO = #{param1}
+    </delete>
+
+</mapper>
+

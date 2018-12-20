@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.prolog.time.management.mapper.NotfilledPublicMapper">
+    <insert id="insert">
+        INSERT INTO project_daily_record
+          (id,
+           project_no,
+           project_name,
+           project_manager,
+           project_user,
+           project_manager_name,
+           project_user_name,
+           view_type,
+           ins_dt,
+           ins_usr_id,
+           project_user_dept,
+           user_hour,
+           nocommit_date)
+          select WORK_IDC.nextval,
+                 m.project_no,
+                 m.project_name,
+                 m.project_manager,
+                 m.project_user,
+                 m.project_manager_name,
+                 m.project_user_name,
+                 '2',
+                 sysdate,
+                 'admin',
+                 m.project_user_dept,
+                 w.hour2 as hour1,
+                 m.nocommit_date
+            from (select wtj.project_no,
+                         wtj.project_name,
+                         wtj.project_manager,
+                         wtj.project_user,
+                         wtj.project_manager_name,
+                         wtj.project_user_name,
+                         wtj.project_user_dept,
+                         trunc(sysdate) nocommit_date
+                    from (select ta.project_no,
+                                 ta.project_name,
+                                 ta.project_manager,
+                                 ta.project_user,
+                                 ta.project_manager_name,
+                                 ta.project_user_name,
+                                 ta.project_user_dept,
+                                 trunc(sysdate) nocommit_date
+                            from project_tema_define ta
+                            left join (select ins_usr_id,
+                                             all_project_id,
+                                             beg_date
+                                        from working_hour_input
+                                       where round(to_number(end_date - beg_date) * 24) <![CDATA[ >= ]]> 7
+                                         and trunc(beg_date) = trunc(sysdate)) tb
+                              on ta.project_user = tb.ins_usr_id
+                           where tb.all_project_id is null
+                             and ta.project_user <![CDATA[ <> ]]> '0'
+                             and to_char(sysdate + 7, 'd') not in ('1', '7')) wtj
+                   where not exists
+                   (select '1'
+                            from project_daily_record pdr
+                           where trunc(pdr.nocommit_date) = trunc(sysdate)
+                             and pdr.view_type = '2'
+                             and pdr.project_user <![CDATA[ <> ]]> '0'
+                             and pdr.project_no = wtj.project_no
+                             and wtj.project_user = pdr.project_user)) m
+            left join working_hour_input n
+              on m.project_no = n.all_project_id
+             and m.project_user = n.ins_usr_id
+             and trunc(n.beg_date) = trunc(sysdate)
+                         left join (select sum(round(to_number(end_date - beg_date) * 24)) hour2,
+                              ins_usr_id
+                         from working_hour_input
+                        group by ins_usr_id) w
+                        on n.ins_usr_id = w.ins_usr_id
+           where n.remark1 = '0'
+             and w.hour2 <![CDATA[ < ]]> 7
+              or n.remark1 is null
+    </insert>
+
+
+    <delete id="delete" parameterType="java.util.List">
+delete from project_daily_record ta
+ where exists (select '1'
+          from working_hour_input tb
+         where tb.ins_usr_id = ta.project_user
+           and trunc(ta.nocommit_date) = trunc(tb.beg_date)
+           and ((select sum(round(to_number(tb.end_date - tb.beg_date) * 24))
+                   from working_hour_input tc
+                  where tc.ins_usr_id = tb.ins_usr_id
+                    and trunc(tc.beg_date) = trunc(tb.beg_date)
+                  group by tc.ins_usr_id) <![CDATA[ >= ]]> 7)
+           and ta.view_type = '2')
+           and ta.ins_dt > sysdate - 90
+</delete>
+
+    <select id="queryNotfilledPublicData" resultType="Map" parameterType="Map">
+        select
+        project_no,
+        project_name,
+        project_manager_name,
+        project_user_name,
+        user_hour,
+        project_user_dept,
+        nocommit_date
+        from project_daily_record
+        where project_manager = #{userid}
+        <if test="bgtime != null">
+            and nocommit_date <![CDATA[ > ]]> (to_date(#{bgtime},'yyyy/mm/dd hh24:mi:ss')-1)
+        </if>
+        <if test="edtime != null">
+            and nocommit_date <![CDATA[ < ]]> (to_date(#{edtime},'yyyy/mm/dd hh24:mi:ss')+1)
+        </if>
+        <if test="strparam != null">
+            and ((project_no like concat(concat('%',#{strparam}),'%')) or (project_name like
+            concat(concat('%',#{strparam}),'%'))
+            or (project_user_name like concat(concat('%',#{strparam}),'%')) or (project_manager_name like
+            concat(concat('%',#{strparam}),'%')))
+        </if>
+        order by nocommit_date DESC
+    </select>
+
+</mapper>
